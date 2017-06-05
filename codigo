@@ -1,0 +1,254 @@
+---
+title: "Discursos - Temer"
+author: "Gabriel Zanlorenssi"
+date: "3 de junho de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1. Bibliotecas utilizadas
+
+As seguintes bibliotecas foram utilizadas. Caso não tenha alguma disponível, é necessário rodar o comando _install.packages("biblioteca aqui")_.  
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(rvest)
+library(stringr)
+library(wordcloud)
+library(tm)
+library(data.table)
+```
+
+* Tidyr e dplyr foram usadas facilitar comandos básicos do R.
+* Rvest para o webscraping no site do planalto.
+* Stringr e tm para as manipulações de texto.
+* Wordcloud para plotar as nuvens de palavras.
+* Data.table para exportar os textos dos discursos para um csv.
+
+#2. Selecionando as URLs
+
+No site do Planalto, na seção dos discursos presidenciais, há 7 páginas com discursos de Temer. O padrão que as diferencia são multiplos de 30. Com um loop, podemos armazenar essa informação facilmente:
+
+```{r}
+## Definindo os parametros para as paginas
+int<-c(0, 30, 60, 90, 120, 150, 180)
+
+## Definindo vetor que guardará os resultados após o loop
+url<-vector("character", 7L)
+
+## Loop para armazenar os dados do Planalto
+for (i in 1:7) {
+url[i]<-paste("http://www2.planalto.gov.br/acompanhe-planalto/discursos?b_start:int=",int[i], sep="")
+}
+```
+
+#3. Raspando os links para os discursos
+
+Usando um loop com rvest, podemos obter todos os links para os discursos de Temer. 
+
+```{r}
+## Definindo vetor dados para guardar os resultados após o loop
+dados <- c()
+
+
+for (i in 1:7) {
+## Ler html de cada pagina
+url_temer <- read_html(url[i])
+
+## Capturar informação nos nodes .url
+nodes <- html_nodes(url_temer, ".url")
+
+## Capturar links
+hrefs <- html_attr(nodes, name = "href")
+
+## "Gambiarra" para poder armazenar os dados como um vetor atômico
+transposed<-transpose(as.list(hrefs))
+transposed<-transpose(transposed)
+
+## Agregar os resultados no objeto dados
+dados <- rbind(dados, transposed)
+
+## Sys sleep para evitar o bloqueio pelo site do Planalto
+Sys.sleep(1)
+}
+```
+
+As transposições vetoriais foram uma "gambiarra" que eu fiz para poder juntar as informações numa matriz (n x 1).
+
+Recomanda-se o Sys.sleep para evitar o bloqueio do IP pelo site do Planalto.
+
+Finalizando a conversão para um data frame onde as linhas são as urls para os discursos de Temer:
+
+```{r}
+## Converter de vetor-linha para vetor-coluna
+dados<-transpose(dados)
+## Definir como um data-frame
+dados<-data.frame(dados)
+## Definir nome da coluna como "url_discurso"
+names(dados)<-c("url_discurso")
+```
+
+
+#4. Raspando os textos dos discursos de Temer
+
+Aqui separei o mesmo código para o 1 ao 140 e para o 141 ao 210, para evitar o bloqueio de IP pelo site do Planalto. Recomendo esperar alguns minutos antes de rodar a segunda sequência de códigos.
+
+O código abaixo raspa os textos dentro da url de cada discurso, remove pontuação, acentos, números e as palavras mais frequentes da língua portuguesa (que, como, sim, não, ...).
+
+```{r}
+discursos <- c()
+for (i in 1:140) {
+## Ler o html dos links
+url_texto <- read_html(as.character(dados$url_discurso[i]))
+## Raspar o texto
+nodes <- html_nodes(url_texto, "#parent-fieldname-text")
+## Armazenar o texto
+text <- html_text(nodes)
+
+## Passar tudo para minusculo
+text<-tolower(text)
+## Remover pontuação
+text<-removePunctuation(text)
+## Remover números
+text<-removeNumbers(text)
+## Remover palavras frequentes da lingua portuguesa
+text2<-removeWords(text, stopwords("pt"))
+## Remover espaços vazios em excesso
+text2<-stripWhitespace(text2)
+
+## Retirar acentos e caracteres especiais
+text2<-str_replace_all(text2, "ú", "u")
+text2<-str_replace_all(text2, "â", "a")
+text2<-str_replace_all(text2, "á", "a")
+text2<-str_replace_all(text2, "ã", "a")
+text2<-str_replace_all(text2, "é", "e")
+text2<-str_replace_all(text2, "ê", "e")
+text2<-str_replace_all(text2, "ç", "c")
+text2<-str_replace_all(text2, "í", "i")
+text2<-str_replace_all(text2, "\n", "")
+text2<-str_replace_all(text2, "û", "u")
+text2<-str_replace_all(text2, "ú", "u")
+text2<-str_replace_all(text2, "õ", "o")
+text2<-str_replace_all(text2, "ó", "o")
+text2<-str_replace_all(text2, "ô", "o")
+
+## Remover alguns termos frequentes do cabecalho dos discursos
+text2<-str_replace_all(text2, "brasiliadf", "")
+text2<-str_replace_all(text2, "paulosp", "")
+text2<-str_replace_all(text2, "planalto", "")
+text2<-str_replace_all(text2, "palacio", "")
+text2<-str_replace_all(text2, "presidente michel temer", "")
+
+## Salvar wordcloud de cada discruso individualmente
+png(filename=paste("~/discurso", i, ".png", sep=""))
+wordcloud(text2, scale=c(5,0.5), max.words=50, random.order=FALSE, 
+          rot.per=0.35, use.r.layout=FALSE, colors=brewer.pal(8, "Dark2"))
+dev.off()
+
+## Armazenar os discursos em um alista
+discursos<- c(discursos, text2)
+
+## Tempo para evitar o bloqueio 
+Sys.sleep(1)
+}
+```
+
+Repetindo para os demais:
+
+```{r}
+discursos <- c()
+for (i in 141:210) {
+## Ler o html dos links
+url_texto <- read_html(as.character(dados$url_discurso[i]))
+## Raspar o texto
+nodes <- html_nodes(url_texto, "#parent-fieldname-text")
+## Armazenar o texto
+text <- html_text(nodes)
+
+## Passar tudo para minusculo
+text<-tolower(text)
+## Remover pontuação
+text<-removePunctuation(text)
+## Remover números
+text<-removeNumbers(text)
+## Remover palavras frequentes da lingua portuguesa
+text2<-removeWords(text, stopwords("pt"))
+## Remover espaços vazios em excesso
+text2<-stripWhitespace(text2)
+
+## Retirar acentos e caracteres especiais
+text2<-str_replace_all(text2, "ú", "u")
+text2<-str_replace_all(text2, "â", "a")
+text2<-str_replace_all(text2, "á", "a")
+text2<-str_replace_all(text2, "ã", "a")
+text2<-str_replace_all(text2, "é", "e")
+text2<-str_replace_all(text2, "ê", "e")
+text2<-str_replace_all(text2, "ç", "c")
+text2<-str_replace_all(text2, "í", "i")
+text2<-str_replace_all(text2, "\n", "")
+text2<-str_replace_all(text2, "û", "u")
+text2<-str_replace_all(text2, "ú", "u")
+text2<-str_replace_all(text2, "õ", "o")
+text2<-str_replace_all(text2, "ó", "o")
+text2<-str_replace_all(text2, "ô", "o")
+
+## Remover alguns termos frequentes do cabecalho dos discursos
+text2<-str_replace_all(text2, "brasiliadf", "")
+text2<-str_replace_all(text2, "paulosp", "")
+text2<-str_replace_all(text2, "planalto", "")
+text2<-str_replace_all(text2, "palacio", "")
+text2<-str_replace_all(text2, "presidente michel temer", "")
+text2<-str_replace_all(text2, " la ", " ")
+
+## Salvar wordcloud de cada discruso individualmente
+png(filename=paste("~/discurso", i, ".png", sep=""))
+wordcloud(text2, scale=c(5,0.5), max.words=50, random.order=FALSE, 
+          rot.per=0.35, use.r.layout=FALSE, colors=brewer.pal(8, "Dark2"))
+dev.off()
+
+## Armazenar os discursos em um alista
+discursos<- c(discursos, text2)
+
+## Tempo para evitar o bloqueio 
+Sys.sleep(1)
+}
+```
+
+#5. Nuvem de palavras
+
+Usando o pacote wordcloud, conseguimos obter uma nuvem de palavras do discurso de Temer:
+
+```{r}
+## Definir arquivo .png que será salvo o gráfico
+png(filename="~/nuvem_temer.png")
+
+## Gerar nuvem de palavras. Parametros dentro dos parenteses
+wordcloud(discursos,scale=c(3,0.5),
+          max.words=100, random.order=FALSE, 
+          rot.per=0.35, use.r.layout=FALSE, colors=brewer.pal(8, "Dark2"))
+##Salvar
+dev.off()
+```
+
+#6. Para exportar os textos como .csv 
+
+Usando data.table, é possível exportar o documento para um arquivo .csv e gerar a nuvem de arquivos em algum software específico como o Wordle, que fornece mais opções gráficas para geração de nuvens.
+
+
+```{r}
+## Transformar o objeto em um data frame
+x <- list(discursos)
+setDT(x)
+
+## Exportar para csv
+write.csv(x, file="discursos.csv")
+```
+
+
+
+
+
