@@ -5,13 +5,17 @@ date: "3 de junho de 2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+Código para raspar os discursos do Temer no site do Planalto. O resultado final pode ser visto [aqui](https://www.facebook.com/photo.php?fbid=1234477403344674&set=a.231173343675090.54077.100003472796916&type=3&theater).
+
+*Atenção*: Esse código é válido até a data marcada neste documento. Atualizaçoes podem ser necessárias.
+
+```{r setup, include=FALSE, echo = F}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#1. Bibliotecas utilizadas
+# 1. Bibliotecas utilizadas
 
-As seguintes bibliotecas foram utilizadas. Caso não tenha alguma disponível, é necessário rodar o comando _install.packages("biblioteca aqui")_.  
+As seguintes bibliotecas foram utilizadas. Caso não tenha alguma disponível, é necessário rodar o comando _install.packages_.  
 
 ```{r, warning=F, message=F, results=F}
 ## Vetor de pacotes utilizados
@@ -27,11 +31,10 @@ lapply(x, require, character.only = T)
 * Stringr, stringi e tm para as manipulações de texto.
 * Wordcloud para plotar as nuvens de palavras.
 
-#2. Selecionando as URLs
+# 2. Selecionando as URLs
 
 No site do Planalto, na seção dos discursos presidenciais, há 7 páginas com discursos de Temer. O padrão que as diferencia são multiplos de 30. Com um loop, podemos armazenar essa informação facilmente:
 
-*Atenção*: Esse código é válido até a data marcada neste documento. Atualizaçoes podem ser necessárias.
 
 ```{r, eval=F}
 ## Definindo os parametros para as paginas
@@ -46,7 +49,7 @@ url[i] <- paste("http://www2.planalto.gov.br/acompanhe-planalto/discursos?b_star
 }
 ```
 
-#3. Raspando os links para os discursos
+# 3. Raspando os links para os discursos
 
 Usando um loop com rvest, podemos obter todos os links para os discursos de Temer. 
 
@@ -81,7 +84,7 @@ dados2 <- data.frame(dados) %>%
 ```
 
 
-#4. Raspando os textos dos discursos de Temer
+# 4. Raspando os textos dos discursos de Temer
 
 O código abaixo raspa os textos dentro da url de cada discurso, remove pontuação, acentos, números e as palavras mais frequentes da língua portuguesa (que, como, sim, não, ...).
 
@@ -115,7 +118,7 @@ Sys.sleep(1)
 }
 ```
 
-#5. Nuvem de palavras
+# 5. Nuvem de palavras
 
 Usando o pacote wordcloud, conseguimos obter uma nuvem de palavras do discurso de Temer:
 
