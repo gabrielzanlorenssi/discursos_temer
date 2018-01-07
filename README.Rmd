@@ -1,0 +1,137 @@
+---
+title: "Discursos - Temer"
+author: "Gabriel Zanlorenssi"
+date: "3 de junho de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1. Bibliotecas utilizadas
+
+As seguintes bibliotecas foram utilizadas. Caso não tenha alguma disponível, é necessário rodar o comando _install.packages("biblioteca aqui")_.  
+
+```{r, warning=F, message=F, results=F}
+## Vetor de pacotes utilizados
+x <- c("tidyr", "dplyr", "rvest", "stringr", 
+       "wordcloud", "tm", "stringi")
+
+## Chamar todos os pacotes de uma vez
+lapply(x, require, character.only = T)
+```
+
+* Tidyr e dplyr serviram de base para os códigos.
+* Rvest para o webscraping no site do planalto.
+* Stringr, stringi e tm para as manipulações de texto.
+* Wordcloud para plotar as nuvens de palavras.
+
+#2. Selecionando as URLs
+
+No site do Planalto, na seção dos discursos presidenciais, há 7 páginas com discursos de Temer. O padrão que as diferencia são multiplos de 30. Com um loop, podemos armazenar essa informação facilmente:
+
+*Atenção*: Esse código é válido até a data marcada neste documento. Atualizaçoes podem ser necessárias.
+
+```{r, eval=F}
+## Definindo os parametros para as paginas
+int<-c(0, 30, 60, 90, 120, 150, 180)
+
+## Definindo vetor que guardará os resultados após o loop
+url<-vector("character", 7L)
+
+## Loop para armazenar os dados do Planalto
+for (i in 1:7) {
+url[i] <- paste("http://www2.planalto.gov.br/acompanhe-planalto/discursos?b_start:int=",int[i], sep="")
+}
+```
+
+#3. Raspando os links para os discursos
+
+Usando um loop com rvest, podemos obter todos os links para os discursos de Temer. 
+
+```{r, eval=F}
+## Definindo vetor dados para guardar os resultados após o loop
+dados <- c()
+
+for (i in 1:7) {
+i = 1
+hrefs <- read_html(url[i]) %>%  # Ler html de cada pagina
+       html_nodes(".url")  %>%  # Capturar informação nos nodes .url
+       html_attr(name = "href")   # Capturar links
+
+
+## Agregar os resultados no objeto dados
+dados <- rbind(dados, hrefs)
+
+## Sys sleep para evitar o bloqueio pelo site do Planalto
+Sys.sleep(1)
+}
+```
+
+Recomanda-se o Sys.sleep para evitar o bloqueio do IP pelo site do Planalto.
+
+Finalizando a conversão para um data frame onde as linhas são as urls para os discursos de Temer:
+
+```{r, eval=F}
+## Definir como um data-frame
+dados2 <- data.frame(dados) %>% 
+  gather(drop, url_discurso, X1:X30) %>% 
+  select(url_discurso)
+```
+
+
+#4. Raspando os textos dos discursos de Temer
+
+O código abaixo raspa os textos dentro da url de cada discurso, remove pontuação, acentos, números e as palavras mais frequentes da língua portuguesa (que, como, sim, não, ...).
+
+```{r, eval=F}
+discursos <- list()
+
+for (i in seq_along(dados2$url_discurso)) {
+## Ler o html dos links e guardar os nodes
+nodes <- read_html(as.character(dados2$url_discurso[i])) %>% 
+  html_nodes(url_texto, css = "#parent-fieldname-text")
+## Armazenar o texto
+text <- html_text(nodes) %>% 
+  tolower() %>%  ## Passar tudo para minusculo
+  removePunctuation() %>%   ## Remover pontuação
+  removeNumbers() %>%  ## Remover números
+  removeWords(stopwords("pt"))  %>%  ## Remover palavras frequentes da lingua portuguesa
+  stripWhitespace(text2) %>% ## Remover espaços vazios em excesso
+  stri_trans_general(id = "Latin-ASCII") %>% 
+  str_replace_all("\n", "") %>% 
+  str_replace_all("brasiliadf", "") %>% 
+  str_replace_all("paulosp", "") %>% 
+  str_replace_all("planalto", "") %>% 
+  str_replace_all("palacio", "") %>% 
+  str_replace_all("presidente michel temer", "")
+
+## Armazenar os discursos em uma lista
+discurso[[i]] <- text
+
+## Tempo para evitar o bloqueio 
+Sys.sleep(1)
+}
+```
+
+#5. Nuvem de palavras
+
+Usando o pacote wordcloud, conseguimos obter uma nuvem de palavras do discurso de Temer:
+
+```{r, eval=F}
+## Definir arquivo .png que será salvo o gráfico
+png(filename="~/nuvem_temer.png")
+
+## Gerar nuvem de palavras. Parametros dentro dos parenteses
+wordcloud(discursos,scale=c(3,0.5),
+          max.words=100, random.order=FALSE, 
+          rot.per=0.35, use.r.layout=FALSE, colors=brewer.pal(8, "Dark2"))
+##Salvar
+dev.off()
+```
+
+
+
+
+
