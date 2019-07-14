@@ -58,7 +58,6 @@ Usando um loop com rvest, podemos obter todos os links para os discursos de Teme
 dados <- c()
 
 for (i in 1:7) {
-i = 1
 hrefs <- read_html(url[i]) %>%  # Ler html de cada pagina
        html_nodes(".url")  %>%  # Capturar informação nos nodes .url
        html_attr(name = "href")   # Capturar links
