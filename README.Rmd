@@ -5,7 +5,7 @@ date: "3 de junho de 2017"
 output: html_document
 ---
 
-Código para raspar os discursos do Temer no site do Planalto. O resultado final pode ser visto [aqui](https://www.facebook.com/photo.php?fbid=1234477403344674&set=a.231173343675090.54077.100003472796916&type=3&theater).
+Código para raspar os discursos do Temer no site do Planalto.
 
 *Atenção*: Esse código é válido até a data marcada neste documento. Atualizaçoes podem ser necessárias.
 
