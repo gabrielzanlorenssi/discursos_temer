@@ -38,12 +38,10 @@ No site do Planalto, na seção dos discursos presidenciais, há 7 páginas com 
 
 ```{r, eval=F}
 ## Definindo os parametros para as paginas
-int<-c(0, 30, 60, 90, 120, 150, 180)
+int <-c(0, 30, 60, 90, 120, 150, 180)
 
-## Loop para armazenar os dados do Planalto
-url <- map_chr(int, function(x) {
-url[i] <- paste0("http://www2.planalto.gov.br/acompanhe-planalto/discursos?b_start:int=", x)
-})
+## Armazenar as urls principais:
+url <- paste0("http://www2.planalto.gov.br/acompanhe-planalto/discursos?b_start:int=", int)
 ```
 
 # 3. Raspando os links para os discursos
