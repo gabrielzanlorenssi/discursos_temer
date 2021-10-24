@@ -33,20 +33,17 @@ lapply(x, require, character.only = T)
 
 # 2. Selecionando as URLs
 
-No site do Planalto, na seção dos discursos presidenciais, há 7 páginas com discursos de Temer. O padrão que as diferencia são multiplos de 30. Com um loop, podemos armazenar essa informação facilmente:
+No site do Planalto, na seção dos discursos presidenciais, há 7 páginas com discursos de Temer. O padrão que as diferencia são multiplos de 30. Portanto, podemos armazenar essa informação facilmente:
 
 
 ```{r, eval=F}
 ## Definindo os parametros para as paginas
 int<-c(0, 30, 60, 90, 120, 150, 180)
 
-## Definindo vetor que guardará os resultados após o loop
-url<-vector("character", 7L)
-
 ## Loop para armazenar os dados do Planalto
-for (i in 1:7) {
-url[i] <- paste("http://www2.planalto.gov.br/acompanhe-planalto/discursos?b_start:int=",int[i], sep="")
-}
+url <- map_chr(int, function(x) {
+url[i] <- paste0("http://www2.planalto.gov.br/acompanhe-planalto/discursos?b_start:int=", x)
+})
 ```
 
 # 3. Raspando os links para os discursos
