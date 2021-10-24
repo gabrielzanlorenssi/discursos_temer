@@ -53,17 +53,18 @@ Usando um loop com rvest, podemos obter todos os links para os discursos de Teme
 dados <- c()
 
 for (i in 1:7) {
+
+dados <- map(url, function(x) {
+
 hrefs <- read_html(url[i]) %>%  # Ler html de cada pagina
        html_nodes(".url")  %>%  # Capturar informação nos nodes .url
        html_attr(name = "href")   # Capturar links
 
-
-## Agregar os resultados no objeto dados
-dados <- rbind(dados, hrefs)
+return(hrefs)
 
 ## Sys sleep para evitar o bloqueio pelo site do Planalto
 Sys.sleep(1)
-}
+}) %>% bind_rows()
 ```
 
 Recomanda-se o Sys.sleep para evitar o bloqueio do IP pelo site do Planalto.
