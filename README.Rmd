@@ -56,7 +56,7 @@ for (i in 1:7) {
 
 dados <- map(url, function(x) {
 
-hrefs <- read_html(url[i]) %>%  # Ler html de cada pagina
+hrefs <- read_html(x) %>%  # Ler html de cada pagina
        html_nodes(".url")  %>%  # Capturar informação nos nodes .url
        html_attr(name = "href")   # Capturar links
 
